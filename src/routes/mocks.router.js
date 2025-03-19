@@ -8,7 +8,7 @@ const router = Router();
 const userService = new UserService();
 const petService = new PetService();
 
-router.get('/api/mocks/mockingpets', (req, res) => {
+router.get('/mockingpets', (req, res) => {
     try {
         const pets = [];
         for(let i = 0; i < 100; i++) {
@@ -20,11 +20,10 @@ router.get('/api/mocks/mockingpets', (req, res) => {
     }
 });
 
-
-router.get('/api/mocks/mockingusers', (req, res) => {
+router.get('/mockingusers', (req, res) => {
     try {
         const users = [];
-        for(let i = 0; i < 100; i++) {
+        for(let i = 0; i < 50; i++) {
             users.push(generateUser());
         }
         res.json({ status: 'success', payload: users });
@@ -33,33 +32,36 @@ router.get('/api/mocks/mockingusers', (req, res) => {
     }
 });
 
-
 router.post('/generateData', async (req, res) => {
     try {
-        const { users: userCount, pets: petCount } = req.body;
+        const { users, pets } = req.body;
         
-        if (!userCount || !petCount) {
+        if (!users || !pets) {
             return res.status(400).json({ 
                 status: 'error', 
-                error: 'Must provide users and pets counts' 
+                error: 'Debe proporcionar la cantidad de users y pets' 
             });
         }
 
-        const users = Array.from({ length: parseInt(userCount) }, () => generateUser());
-        const pets = Array.from({ length: parseInt(petCount) }, () => generatePet());
+        const generatedUsers = Array.from({ length: parseInt(users) }, () => generateUser());
+        const generatedPets = Array.from({ length: parseInt(pets) }, () => generatePet());
         
-        const insertedUsers = await userService.createMany(users);
-        const insertedPets = await petService.createMany(pets);
+        const insertedUsers = await userService.createMany(generatedUsers);
+        const insertedPets = await petService.createMany(generatedPets);
         
         res.json({ 
             status: 'success', 
+            message: `Se han generado ${users} usuarios y ${pets} mascotas correctamente`,
             payload: {
                 users: insertedUsers,
                 pets: insertedPets
             }
         });
     } catch (error) {
-        res.status(500).json({ status: 'error', error: error.message });
+        res.status(500).json({ 
+            status: 'error', 
+            error: 'Error al generar los datos: ' + error.message 
+        });
     }
 });
 

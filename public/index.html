@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Adopciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">🐾 Sistema de Adopciones</a>
+            <div class="navbar-nav ms-auto" id="navbarNav">
+                <div class="d-flex" id="authButtons">
+                    <button class="btn btn-outline-light me-2" onclick="showLoginForm()">Iniciar Sesión</button>
+                    <button class="btn btn-primary" onclick="showRegisterForm()">Registrarse</button>
+                </div>
+                <div class="d-none" id="userInfo">
+                    <span class="navbar-text me-3" id="userEmail"></span>
+                    <button class="btn btn-outline-light" onclick="logout()">Cerrar Sesión</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Formularios de Auth -->
+        <div id="authForms">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <!-- Login Form -->
+                    <div class="card mb-4" id="loginForm">
+                        <div class="card-header">
+                            <h4>Iniciar Sesión</h4>
+                        </div>
+                        <div class="card-body">
+                            <form onsubmit="login(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="loginEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Contraseña</label>
+                                    <input type="password" class="form-control" id="loginPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Register Form -->
+                    <div class="card mb-4 d-none" id="registerForm">
+                        <div class="card-header">
+                            <h4>Registrarse</h4>
+                        </div>
+                        <div class="card-body">
+                            <form onsubmit="register(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="registerFirstName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Apellido</label>
+                                    <input type="text" class="form-control" id="registerLastName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="registerEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Contraseña</label>
+                                    <input type="password" class="form-control" id="registerPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Registrarse</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="d-none">
+            <div class="row">
+                <!-- Pets Section -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h4>Mascotas Disponibles</h4>
+                            <button class="btn btn-primary btn-sm" onclick="showNewPetForm()">Nueva Mascota</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="petsList" class="row"></div>
+                        </div>
+                    </div>
+
+                    <!-- New Pet Form -->
+                    <div class="card mb-4 d-none" id="newPetForm">
+                        <div class="card-header">
+                            <h4>Nueva Mascota</h4>
+                        </div>
+                        <div class="card-body">
+                            <form onsubmit="createPet(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="petName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Especie</label>
+                                    <select class="form-control" id="petSpecie" required>
+                                        <option value="dog">Perro</option>
+                                        <option value="cat">Gato</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de Nacimiento</label>
+                                    <input type="date" class="form-control" id="petBirthDate" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Crear Mascota</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adoptions Section -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Mis Adopciones</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="adoptionsList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html> 

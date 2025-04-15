@@ -12,7 +12,7 @@ const getUser = async(req,res)=> {
     res.send({status:"success",payload:user})
 }
 
-const updateUser =async(req,res)=>{
+const updateUser = async(req,res)=>{
     const updateBody = req.body;
     const userId = req.params.uid;
     const user = await usersService.getUserById(userId);

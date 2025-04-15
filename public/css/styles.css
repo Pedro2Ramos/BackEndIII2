@@ -1,0 +1,53 @@
+.pet-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.pet-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.adoption-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.adoption-item.pending {
+    background-color: #fff3cd;
+}
+
+.adoption-item.approved {
+    background-color: #d4edda;
+}
+
+.adoption-item.rejected {
+    background-color: #f8d7da;
+}
+
+.navbar {
+    margin-bottom: 2rem;
+}
+
+.alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    min-width: 300px;
+}
+
+.pet-card .btn-adopt {
+    width: 100%;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+} 

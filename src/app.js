@@ -2,8 +2,10 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
-import adoptionRouter from './routes/adoption.router.js';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUiExpress from 'swagger-ui-express';
 
+import adoptionRouter from './routes/adoption.router.js';
 import usersRouter from './routes/users.router.js';
 import petsRouter from './routes/pets.router.js';
 import sessionsRouter from './routes/sessions.router.js';
@@ -16,38 +18,51 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Solo conectar a la base de datos si no estamos en modo test
-if (process.env.NODE_ENV !== 'test') {
-    mongoose.connect(process.env.MONGODB_URI)
-        .then(() => console.log('Connected to MongoDB'))
-        .catch(err => console.error('MongoDB connection error:', err));
-}
-
+// Middlewares
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
 app.use(addLogger);
+app.use(express.static('public'));
 
+// Swagger config
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.1',
+        info: {
+            title: 'Documentación de API de Adopciones',
+            description: 'Documentación para API de sistema de adopciones'
+        }
+    },
+    apis: ['./docs/**/*.yaml']
+};
+
+const specs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
+
+// Routes
+app.use('/api/adoptions', adoptionRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pets', petsRouter);
-app.use('/api/adoptions', adoptionRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/mocks', mocksRouter);
 
-app.use('*', (req, res, next) => {
-    const error = new Error(`Ruta ${req.originalUrl} no encontrada`);
-    error.code = 'NOT_FOUND';
-    next(error);
-});
-
+// Error handling
 app.use(errorHandler);
 
-// Solo iniciar el servidor si no estamos en modo test
-if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+// Database connection
+try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('Connected to MongoDB');
+} catch (error) {
+    console.error('Error connecting to MongoDB:', error);
 }
+
+// Server start
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
 
 export default app;

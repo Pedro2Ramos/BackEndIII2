@@ -7,15 +7,17 @@ const customLevelsOptions = {
         warning: 2,
         info: 3,
         debug: 4
-    },
-    colors: {
-        fatal: 'red',
-        error: 'orange',
-        warning: 'yellow',
-        info: 'blue',
-        debug: 'white'
     }
 };
+
+// Añadiendo colores correctamente
+winston.addColors({
+    fatal: 'red',
+    error: 'magenta',
+    warning: 'yellow',
+    info: 'blue',
+    debug: 'white'
+});
 
 const logger = winston.createLogger({
     levels: customLevelsOptions.levels,

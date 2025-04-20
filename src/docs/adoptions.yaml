@@ -1,0 +1,121 @@
+openapi: 3.0.1
+info:
+  title: API de Adopciones
+  description: API para gestionar el proceso de adopción de mascotas
+  version: 1.0.0
+
+paths:
+  /api/adoptions:
+    get:
+      summary: Obtener todas las adopciones
+      tags: [Adoptions]
+      responses:
+        '200':
+          description: Lista de adopciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Adoption'
+    post:
+      summary: Crear una nueva adopción
+      tags: [Adoptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptionRequest'
+      responses:
+        '201':
+          description: Adopción creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adoption'
+
+  /api/adoptions/{id}:
+    get:
+      summary: Obtener una adopción por ID
+      tags: [Adoptions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Adopción encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adoption'
+    put:
+      summary: Actualizar una adopción
+      tags: [Adoptions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptionUpdate'
+      responses:
+        '200':
+          description: Adopción actualizada exitosamente
+    delete:
+      summary: Eliminar una adopción
+      tags: [Adoptions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Adopción eliminada exitosamente
+
+components:
+  schemas:
+    Adoption:
+      type: object
+      properties:
+        _id:
+          type: string
+        petId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+          format: date-time
+    AdoptionRequest:
+      type: object
+      required:
+        - petId
+        - userId
+      properties:
+        petId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+    AdoptionUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected] 

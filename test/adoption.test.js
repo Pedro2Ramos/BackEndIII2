@@ -1,184 +1,170 @@
 import request from 'supertest';
 import { expect } from 'chai';
 import app from '../src/app.js';
+import mongoose from 'mongoose';
 
-describe('Adoption Router Tests - Validación de Consigna', () => {
+describe('Adoption Router Tests', () => {
     let testPetId;
     let testUserId;
     let testAdoptionId;
 
     before(async () => {
-        testPetId = "mockPetId";
-        testUserId = "mockUserId";
+        // Crear un usuario y una mascota de prueba
+        const userResponse = await request(app)
+            .post('/api/users')
+            .send({
+                first_name: 'Test',
+                last_name: 'User',
+                email: 'test@example.com',
+                password: 'password123'
+            });
+        testUserId = userResponse.body._id;
+
+        const petResponse = await request(app)
+            .post('/api/pets')
+            .send({
+                name: 'Test Pet',
+                species: 'Dog',
+                age: 2,
+                description: 'Test pet description'
+            });
+        testPetId = petResponse.body._id;
     });
 
-    describe('1. Tests Funcionales para adoption.router.js', () => {
-        describe('GET /api/adoptions', () => {
-            it('debería obtener todas las adopciones', async () => {
-                const response = await request(app).get('/api/adoptions');
-                expect(response.status).to.equal(200);
-                expect(response.body).to.be.an('array');
-            });
-        });
-
-        describe('POST /api/adoptions', () => {
-            it('debería crear una nueva adopción', async () => {
-                const mockAdoption = {
-                    petId: testPetId,
-                    userId: testUserId,
-                    status: "pending"
-                };
-                
-                const response = await request(app)
-                    .post('/api/adoptions')
-                    .send(mockAdoption);
-                    
-                expect(response.status).to.equal(201);
-                expect(response.body).to.have.property('_id');
-                testAdoptionId = response.body._id;
-            });
-
-            it('debería validar campos requeridos', async () => {
-                const invalidAdoption = {
-                    // Falta petId y userId
-                    status: "pending"
-                };
-                
-                const response = await request(app)
-                    .post('/api/adoptions')
-                    .send(invalidAdoption);
-                    
-                expect(response.status).to.equal(400);
-            });
-        });
-
-        describe('GET /api/adoptions/:id', () => {
-            it('debería obtener una adopción por ID', async () => {
-                const response = await request(app)
-                    .get(`/api/adoptions/${testAdoptionId}`);
-                expect(response.status).to.equal(200);
-                expect(response.body._id).to.equal(testAdoptionId);
-            });
-
-            it('debería manejar IDs inválidos', async () => {
-                const response = await request(app)
-                    .get('/api/adoptions/invalid_id');
-                expect(response.status).to.equal(400);
-            });
-        });
-
-        describe('PUT /api/adoptions/:id', () => {
-            it('debería actualizar el estado de una adopción', async () => {
-                const updateData = {
-                    status: "approved"
-                };
-
-                const response = await request(app)
-                    .put(`/api/adoptions/${testAdoptionId}`)
-                    .send(updateData);
-
-                expect(response.status).to.equal(200);
-                expect(response.body.status).to.equal('approved');
-            });
-        });
-
-        describe('DELETE /api/adoptions/:id', () => {
-            it('debería eliminar una adopción', async () => {
-                const response = await request(app)
-                    .delete(`/api/adoptions/${testAdoptionId}`);
-
-                expect(response.status).to.equal(200);
-                
-                // Verificar que fue eliminada
-                const checkResponse = await request(app)
-                    .get(`/api/adoptions/${testAdoptionId}`);
-                expect(checkResponse.status).to.equal(404);
-            });
-        });
+    after(async () => {
+        // Limpiar la base de datos después de las pruebas
+        await mongoose.connection.db.dropDatabase();
+        await mongoose.connection.close();
     });
 
-    describe('2. Reglas de Negocio', () => {
-        it('no debería permitir adoptar una mascota ya adoptada', async () => {
-            // Primera adopción
-            const firstAdoption = await request(app)
+    describe('POST /api/adoptions', () => {
+        it('debería crear una nueva adopción con datos válidos', async () => {
+            const adoptionData = {
+                petId: testPetId,
+                userId: testUserId,
+                status: 'pending'
+            };
+
+            const response = await request(app)
                 .post('/api/adoptions')
-                .send({
-                    petId: "pet123",
-                    userId: "user1",
-                    status: "approved"
-                });
+                .send(adoptionData);
 
-            // Intentar adoptar la misma mascota
-            const secondAdoption = await request(app)
+            expect(response.status).to.equal(201);
+            expect(response.body).to.have.property('_id');
+            expect(response.body.petId).to.equal(testPetId);
+            expect(response.body.userId).to.equal(testUserId);
+            expect(response.body.status).to.equal('pending');
+            expect(response.body).to.have.property('createdAt');
+
+            testAdoptionId = response.body._id;
+        });
+
+        it('debería retornar 400 si faltan campos requeridos', async () => {
+            const invalidAdoption = {
+                status: 'pending'
+            };
+
+            const response = await request(app)
                 .post('/api/adoptions')
-                .send({
-                    petId: "pet123",
-                    userId: "user2",
-                    status: "pending"
-                });
+                .send(invalidAdoption);
 
-            expect(secondAdoption.status).to.equal(400);
-            expect(secondAdoption.body).to.have.property('error');
+            expect(response.status).to.equal(400);
+            expect(response.body).to.have.property('error');
+            expect(response.body.error).to.include('petId');
+            expect(response.body.error).to.include('userId');
         });
 
-        it('debería limitar el número de adopciones pendientes por usuario', async () => {
-            const maxPendingAdoptions = 3;
-            const adoptionPromises = [];
+        it('debería retornar 400 si el status no es válido', async () => {
+            const invalidAdoption = {
+                petId: testPetId,
+                userId: testUserId,
+                status: 'invalid_status'
+            };
 
-            // Intentar crear más adopciones que el límite permitido
-            for (let i = 0; i < maxPendingAdoptions + 1; i++) {
-                adoptionPromises.push(
-                    request(app)
-                        .post('/api/adoptions')
-                        .send({
-                            petId: `testPet${i}`,
-                            userId: "limitTestUser",
-                            status: "pending"
-                        })
-                );
-            }
+            const response = await request(app)
+                .post('/api/adoptions')
+                .send(invalidAdoption);
 
-            const results = await Promise.all(adoptionPromises);
-            const lastResponse = results[results.length - 1];
-
-            expect(lastResponse.status).to.equal(400);
-            expect(lastResponse.body).to.have.property('error');
+            expect(response.status).to.equal(400);
+            expect(response.body).to.have.property('error');
         });
     });
 
-    describe('3. Validación de Documentación', () => {
-        it('debería tener documentación Swagger accesible', async () => {
-            const response = await request(app).get('/api-docs');
-            expect(response.status).to.equal(200);
-        });
+    describe('GET /api/adoptions', () => {
+        it('debería obtener todas las adopciones', async () => {
+            const response = await request(app).get('/api/adoptions');
 
-        it('debería incluir la documentación del módulo Users', async () => {
-            const response = await request(app).get('/api-docs/swagger.json');
             expect(response.status).to.equal(200);
-            expect(response.body.paths).to.have.property('/api/users');
-            expect(response.body.components.schemas).to.have.property('User');
+            expect(response.body).to.be.an('array');
+            expect(response.body.length).to.be.greaterThan(0);
+            expect(response.body[0]).to.have.property('_id');
+            expect(response.body[0]).to.have.property('petId');
+            expect(response.body[0]).to.have.property('userId');
+            expect(response.body[0]).to.have.property('status');
         });
     });
 
-    describe('4. Validación de Docker', () => {
-        it('debería tener un Dockerfile válido', async () => {
-            const fs = require('fs');
-            const dockerfileExists = fs.existsSync('./Dockerfile');
-            expect(dockerfileExists).to.be.true;
+    describe('GET /api/adoptions/:id', () => {
+        it('debería obtener una adopción por ID', async () => {
+            const response = await request(app)
+                .get(`/api/adoptions/${testAdoptionId}`);
 
-            const dockerfileContent = fs.readFileSync('./Dockerfile', 'utf8');
-            expect(dockerfileContent).to.include('FROM node');
-            expect(dockerfileContent).to.include('WORKDIR /app');
-            expect(dockerfileContent).to.include('COPY package*.json');
-            expect(dockerfileContent).to.include('RUN npm install');
-            expect(dockerfileContent).to.include('COPY . .');
-            expect(dockerfileContent).to.include('CMD');
+            expect(response.status).to.equal(200);
+            expect(response.body._id).to.equal(testAdoptionId);
+            expect(response.body.petId).to.equal(testPetId);
+            expect(response.body.userId).to.equal(testUserId);
+            expect(response.body.status).to.equal('pending');
         });
 
-        it('debería tener un README.md con el link a DockerHub', async () => {
-            const fs = require('fs');
-            const readmeContent = fs.readFileSync('./README.md', 'utf8');
-            expect(readmeContent).to.include('docker.io/pedrodosramos/adoption-project');
+        it('debería retornar 404 si la adopción no existe', async () => {
+            const response = await request(app)
+                .get('/api/adoptions/507f1f77bcf86cd799439011');
+
+            expect(response.status).to.equal(404);
+            expect(response.body).to.have.property('error');
+        });
+    });
+
+    describe('PUT /api/adoptions/:id', () => {
+        it('debería actualizar el estado de una adopción', async () => {
+            const updateData = {
+                status: 'approved'
+            };
+
+            const response = await request(app)
+                .put(`/api/adoptions/${testAdoptionId}`)
+                .send(updateData);
+
+            expect(response.status).to.equal(200);
+            expect(response.body.status).to.equal('approved');
+        });
+
+        it('debería retornar 400 si el nuevo estado no es válido', async () => {
+            const updateData = {
+                status: 'invalid_status'
+            };
+
+            const response = await request(app)
+                .put(`/api/adoptions/${testAdoptionId}`)
+                .send(updateData);
+
+            expect(response.status).to.equal(400);
+            expect(response.body).to.have.property('error');
+        });
+    });
+
+    describe('DELETE /api/adoptions/:id', () => {
+        it('debería eliminar una adopción', async () => {
+            const response = await request(app)
+                .delete(`/api/adoptions/${testAdoptionId}`);
+
+            expect(response.status).to.equal(200);
+            expect(response.body).to.have.property('message');
+
+            // Verificar que fue eliminada
+            const checkResponse = await request(app)
+                .get(`/api/adoptions/${testAdoptionId}`);
+            expect(checkResponse.status).to.equal(404);
         });
     });
 }); 

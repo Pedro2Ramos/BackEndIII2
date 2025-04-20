@@ -10,6 +10,7 @@ import usersRouter from './routes/users.router.js';
 import petsRouter from './routes/pets.router.js';
 import sessionsRouter from './routes/sessions.router.js';
 import mocksRouter from './routes/mocks.router.js';
+import loggerRouter from './routes/logger.router.js';
 
 import { addLogger } from './utils/logger.js';
 import { errorHandler } from './middlewares/error.handler.js';
@@ -33,10 +34,11 @@ const swaggerOptions = {
         openapi: '3.0.1',
         info: {
             title: 'Documentación de API de Adopciones',
-            description: 'Documentación para API de sistema de adopciones'
+            description: 'Documentación para API de sistema de adopciones',
+            version: '1.0.0'
         }
     },
-    apis: ['./docs/**/*.yaml']
+    apis: [`${process.cwd()}/src/docs/*.yaml`]
 };
 
 const specs = swaggerJsdoc(swaggerOptions);
@@ -48,6 +50,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/mocks', mocksRouter);
+app.use('/api', loggerRouter);
 
 // Error handling
 app.use(errorHandler);
